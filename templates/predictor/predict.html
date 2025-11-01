@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict Property Price - PropertyAI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        /* Navigation - Same as home */
+        nav {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        /* Form Section */
+        .form-section {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+        }
+
+        .form-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .form-header p {
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-group .required {
+            color: var(--danger);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Result Section */
+        .result-section {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .price-display {
+            text-align: center;
+            padding: 2rem;
+            background: var(--gradient);
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .price-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .price-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .confidence {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .price-range {
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .price-range h3 {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .range-bar {
+            background: #e2e8f0;
+            height: 40px;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .range-fill {
+            background: var(--gradient);
+            height: 100%;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .explanations {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .explanations h3 {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .explanation-item {
+            padding: 0.75rem;
+            background: white;
+            border-left: 3px solid var(--primary);
+            margin-bottom: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .price-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-home"></i> PropertyAI
+            </a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/predict/">Predict Price</a></li>
+                <li><a href="/dashboard/">Dashboard</a></li>
+                <li><a href="/history/">History</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Form Section -->
+        <div class="form-section">
+            <div class="form-header">
+                <h1><i class="fas fa-calculator"></i> Property Price Prediction</h1>
+                <p>Enter property details to get an instant price estimate</p>
+            </div>
+
+            <form id="predictionForm">
+                <div class="form-group">
+                    <label for="propertyType">Property Type <span class="required">*</span></label>
+                    <select class="form-control" id="propertyType" required>
+                        <option value="">Select property type...</option>
+                        {% for value, label in property_types %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location <span class="required">*</span></label>
+                    <select class="form-control" id="location" required>
+                        <option value="">Select location...</option>
+                        {% for value, label in locations %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bedrooms">Bedrooms <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="bedrooms" min="1" max="20" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bathrooms">Bathrooms <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="bathrooms" min="1" max="20" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="houseSize">House Size (m²)</label>
+                        <input type="number" class="form-control" id="houseSize" min="0" step="0.1" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label for="landSize">Land Size (m²)</label>
+                        <input type="number" class="form-control" id="landSize" min="0" step="0.1" placeholder="Optional">
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-magic"></i> Predict Price
+                </button>
+            </form>
+        </div>
+
+        <!-- Result Section -->
+        <div class="result-section" id="resultSection">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing property data...</p>
+            </div>
+
+            <div id="resultContent" style="display:none;">
+                <div class="price-display">
+                    <div class="price-label">Estimated Property Value</div>
+                    <div class="price-value" id="predictedPrice">KSh 0</div>
+                    <div class="confidence">
+                        Confidence: <span id="confidenceScore">0%</span>
+                    </div>
+                </div>
+
+                <div class="price-range">
+                    <h3><i class="fas fa-chart-line"></i> Price Range</h3>
+                    <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">
+                        Min: <span id="minPrice">KSh 0</span> - Max: <span id="maxPrice">KSh 0</span>
+                    </p>
+                    <div class="range-bar">
+                        <div class="range-fill" id="rangeFill">95% Confidence</div>
+                    </div>
+                </div>
+
+                <div class="explanations">
+                    <h3><i class="fas fa-lightbulb"></i> Key Insights</h3>
+                    <div id="explanationsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('predictionForm');
+        const resultSection = document.getElementById('resultSection');
+        const loading = document.getElementById('loading');
+        const resultContent = document.getElementById('resultContent');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form data
+            const formData = {
+                property_type: document.getElementById('propertyType').value,
+                location: document.getElementById('location').value,
+                bedrooms: parseInt(document.getElementById('bedrooms').value),
+                bathrooms: parseInt(document.getElementById('bathrooms').value),
+                house_size: document.getElementById('houseSize').value || null,
+                land_size: document.getElementById('landSize').value || null,
+            };
+
+            // Show loading
+            resultSection.classList.add('show');
+            loading.classList.add('show');
+            resultContent.style.display = 'none';
+
+            try {
+                // Make API request
+                const response = await fetch('/api/predictions/predict/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayResults(data);
+                } else {
+                    alert('Prediction failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error making prediction: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        function displayResults(data) {
+            // Display price
+            document.getElementById('predictedPrice').textContent = data.predicted_price_formatted;
+            document.getElementById('confidenceScore').textContent = data.confidence_percentage;
+
+            // Display range
+            document.getElementById('minPrice').textContent = data.price_range.min_formatted;
+            document.getElementById('maxPrice').textContent = data.price_range.max_formatted;
+
+            // Display explanations
+            const explanationsList = document.getElementById('explanationsList');
+            explanationsList.innerHTML = '';
+            data.explanations.forEach(exp => {
+                const div = document.createElement('div');
+                div.className = 'explanation-item';
+                div.innerHTML = `<i class="fas fa-check-circle" style="color: var(--secondary); margin-right: 0.5rem;"></i>${exp}`;
+                explanationsList.appendChild(div);
+            });
+
+            resultContent.style.display = 'block';
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
